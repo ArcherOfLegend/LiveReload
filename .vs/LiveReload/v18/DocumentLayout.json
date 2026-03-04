@@ -1,0 +1,37 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\SV\\Documents\\Projects\\LiveReload\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}|umvc3_reload.vcxproj|C:\\Users\\SV\\Documents\\Projects\\LiveReload\\umvc3_reload.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}|umvc3_reload.vcxproj|solutionrelative:umvc3_reload.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "umvc3_reload.cpp",
+              "DocumentMoniker": "C:\\Users\\SV\\Documents\\Projects\\LiveReload\\umvc3_reload.cpp",
+              "RelativeDocumentMoniker": "umvc3_reload.cpp",
+              "ToolTip": "C:\\Users\\SV\\Documents\\Projects\\LiveReload\\umvc3_reload.cpp",
+              "RelativeToolTip": "umvc3_reload.cpp",
+              "ViewState": "AgIAAFEAAAAAAAAAAAAAAHwAAAATAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2026-03-04T18:35:35.035Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

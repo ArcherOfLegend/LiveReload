@@ -1,23 +1,14 @@
 // UMvC3 Live Character File Reloader
 // Made by Archer, with thanks to Gneiss for doing most of the heavy lifting <3
-/* 
- * Build instructions:
- *   - Visual Studio 2019/2022, x64, Release
- *   - Project type: DLL
- *   - Add MinHook (https://github.com/TsudaKageyu/minhook) to your project
- *   - Rename output .dll to .asi and drop in UMvC3 game directory
- *   - Make sure Ultimate ASI Loader (dinput8.dll or version.dll) is present
- *
- * Dependencies:
- *   - MinHook (included via MinHook.h + lib)
- */
 
 #include <Windows.h>
 #include <cstdint>
+#include <cstdio>
 
 // MinHook — https://github.com/TsudaKageyu/minhook
 // Add minhook/include to include path, link against MinHook.x64.lib
 #include "MinHook.h"
+
 
 // Offsets
 static constexpr uintptr_t OFF_HOOK_SITE  = 0x2EB336; // Hook
@@ -43,68 +34,43 @@ static FnInit2     pfnInit2     = nullptr;
 static FnFileLoad  pfnFileLoad  = nullptr;
 static FnOriginal  pfnOriginal  = nullptr;
 
-// MinHook trampoline — lets us call the original bytes at the hook site if needed
+// MinHook trampoline
 static FnOriginal  pfnTrampoline = nullptr;
 
-// -----------------------------------------------------------------------
-// Hook function
-// Replaces the call at umvc3.exe+2EB336 (originally: call umvc3.exe+3AA0)
-//
-// CE equivalent:
-//   call umvc3.exe+1AC0        → pfnInitObj()
-//   xorps xmm2,xmm2 / xor edx,edx
-//   mov rcx,rax
-//   call umvc3.exe+2C0540      → pfnReset(obj, 0)
-//   call umvc3.exe+1AC0        → pfnInitObj()
-//   mov dl,01
-//   mov rcx,rax
-//   call umvc3.exe+3F8700      → pfnCharLoad(obj, 1)
-//   call umvc3.exe+4700        → pfnInit2(obj)  [rax still holds obj]
-//   mov rcx,rax
-//   call loadtest (umvc3.exe+24B530) → pfnFileLoad(obj)
-//   jmp umvc3.exe+2EB5AF       → handled by MinHook trampoline + hook placement
-// -----------------------------------------------------------------------
 void __fastcall HookedContinue()
 {
-    // Step 1: get an object/context (first call)
+    // get an object/context (first call)
     void* obj = pfnInitObj();
 
-    // Step 2: reset match state with obj, rdx=0
+    // reset match state with obj, rdx=0
     pfnReset(obj, 0);
 
-    // Step 3: get fresh object/context (second call)
+    // get fresh object/context (second call)
     obj = pfnInitObj();
 
-    // Step 4: trigger character load with obj, dl=1
+    // trigger character load with obj, dl=1
     pfnCharLoad(obj, 1);
 
-    // Step 5: secondary init (rax/obj still valid from step 3)
+    // secondary init (rax/obj still valid from step 3)
     pfnInit2(obj);
 
-    // Step 6: reload character files ("loadtest" → umvc3.exe+24B530)
+    // reload character files ("loadtest" → umvc3.exe+24B530)
     pfnFileLoad(obj);
 
-    // Note: execution resumes at umvc3.exe+2EB5AF naturally because MinHook
-    // only replaces the call at 2EB336; the code after it continues as normal.
+    // execution resumes at umvc3.exe+2EB5AF naturally because MinHook
+    // only replaces the call at 2EB336, the code after it continues as normal.
     // If you find the game hangs after this, uncomment the trampoline call:
     // pfnTrampoline();
 }
 
-// -----------------------------------------------------------------------
-// Trampolined hook — MinHook replaces the CALL at OFF_HOOK_SITE.
-// We need to hook a CALL instruction, so we hook the target function
-// (OFF_ORIGINAL / umvc3.exe+3AA0) instead, which is cleaner.
-// -----------------------------------------------------------------------
+
 void __fastcall HookedOriginal()
 {
     HookedContinue();
-    // Do NOT call trampoline — we intentionally skip the original 3AA0 logic
-    // and replace it entirely with our reload sequence.
+    // Do NOT call trampoline cuase I intentionally skipped the original 3AA0 logic
+    // and replace it entirely with the reload sequence.
 }
 
-// -----------------------------------------------------------------------
-// Setup
-// -----------------------------------------------------------------------
 static void Install()
 {
     const uintptr_t base = reinterpret_cast<uintptr_t>(GetModuleHandleA("umvc3.exe"));
@@ -128,7 +94,6 @@ static void Install()
     }
 
     // Hook umvc3.exe+3AA0 (the original call target at the hook site)
-    // This is cleaner than patching the CALL instruction directly.
     if (MH_CreateHook(pfnOriginal, &HookedOriginal, reinterpret_cast<void**>(&pfnTrampoline)) != MH_OK) {
         MessageBoxA(nullptr, "Failed to create hook.", "UMvC3 Reloader", MB_ICONERROR);
         return;
@@ -140,9 +105,9 @@ static void Install()
     }
 
     // Optionally log to a file for debugging
-    // FILE* f = fopen("umvc3_reload.log", "w");
-    // fprintf(f, "UMvC3 Reloader installed. Base: 0x%llX\n", base);
-    // fclose(f);
+    FILE* f = fopen("umvc3_reload.log", "w");
+    fprintf(f, "UMvC3 Reloader installed. Base: 0x%llX\n", base);
+    fclose(f);
 }
 
 static void Uninstall()
@@ -152,16 +117,16 @@ static void Uninstall()
     MH_Uninitialize();
 }
 
-// -----------------------------------------------------------------------
-// DLL Entry Point (required by Ultimate ASI Loader)
-// -----------------------------------------------------------------------
+
 BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
 {
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
         DisableThreadLibraryCalls(hModule);
-        // Run on a thread so we don't block the loader
+        // Run on a thread so the loader isn't blocked
+		// This is to ensure the game has loaded before we try to hook
+
         CreateThread(nullptr, 0, [](LPVOID) -> DWORD {
             // Wait for the game to finish loading before hooking
             Sleep(2000);
