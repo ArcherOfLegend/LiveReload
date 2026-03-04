@@ -1,4 +1,7 @@
 # Prerequisites
+.vs\LiveReload\v18
+obj\umvc3_reload
+bin\
 *.d
 
 # Compiled Object files
